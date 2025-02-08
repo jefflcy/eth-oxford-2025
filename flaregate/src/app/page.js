@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { marketplaceABI, marketplaceAddress } from '@/lib/marketplaceContract';
-import { parseUnits } from "ethers";
+import { parseUnits, formatEther } from "ethers";
 
 // ----- Navbar Component -----
 function Navbar({ onCreateOrder, onConnectWallet }) {
@@ -304,7 +304,7 @@ export default function Home() {
         id: order.id.toString(),
         title: `Order #${order.id.toString()}`,
         price: `${order.price.toString()} ${order.currency}`,
-        quantity: `${order.amount.toString()} CFLR2`,
+        quantity: `${formatEther(order.amount)} CFLR2`,
       }))
     : [];
 
