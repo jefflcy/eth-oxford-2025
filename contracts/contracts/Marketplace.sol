@@ -39,6 +39,7 @@ struct DataTransportObject {
 }
 
 contract Marketplace {
+    address public owner;
 
     event OrderCreated(uint256 indexed orderId, address indexed by);
     event OrderAccepted(
@@ -52,7 +53,13 @@ contract Marketplace {
     string[] public acceptedCurrencies;
     Order[] public allOrders;
 
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
     constructor(string[] memory _acceptedCurrencies) {
+        owner = msg.sender;
         acceptedCurrencies = _acceptedCurrencies; // ["USD', "EUR", "GBP"]
     }
 
@@ -101,7 +108,7 @@ contract Marketplace {
     }
 
     // called by backend during submitProof to record attested fiat payment
-    function recordFiatPayment(IJsonApi.Proof calldata _proof) public {
+    function recordFiatPayment(IJsonApi.Proof calldata _proof) public onlyOwner {
         require(ContractRegistry.auxiliaryGetIJsonApiVerification().verifyJsonApi(_proof), "Invalid proof");
         
         DataTransportObject memory dto = abi.decode(
