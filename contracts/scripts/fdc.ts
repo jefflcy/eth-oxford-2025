@@ -1,7 +1,7 @@
 import { artifacts, ethers, run } from "hardhat";
-// import { StarWarsCharacterListInstance } from "../typechain-types";
+import { MarketplaceInstance } from "../typechain-types";
 
-const StarWarsCharacterList = artifacts.require("StarWarsCharacterList");
+const Marketplace = artifacts.require("Marketplace");
 const FDCHub = artifacts.require("@flarenetwork/flare-periphery-contracts/coston/IFdcHub.sol:IFdcHub");
 
 // Simple hex encoding
@@ -16,22 +16,8 @@ function toHex(data: string) {
 const { JQ_VERIFIER_URL_TESTNET, JQ_API_KEY, DA_LAYER_URL_COSTON2 } = process.env;
 const WEB2_JSON_API_URL = "https://pastes.io/download/sample-payments-webhook-response-1";
 
-// async function deployMarketplace() {
-    //     const list: StarWarsCharacterListInstance = await StarWarsCharacterList.new();
-    
-    //     console.log("Char list deployed at:", list.address);
-    //     // verify 
-    //     const result = await run("verify:verify", {
-        //         address: list.address,
-        //         constructorArguments: [],
-        //     })
-        // }
-        
-        // deployMainList().then((data) => {
-            //     process.exit(0);
-            // });
-            
-const STAR_WARS_LIST_ADDRESS = "0x531B6E1e924aa8b431D1cacF517468DF2c3faa4F"; // coston2
+// UPDATE THIS WITH LATEST DEPLOYED CONTRACT ADDRESS
+const MARKETPLACE_ADDRESS = ""; // coston2
 
 /* --------------------------------------------------- prepareRequest --------------------------------------------------- */
 
@@ -80,9 +66,6 @@ const votingEpochDurationSeconds = 90; // coston2
 async function submitRequest() {
     const requestData = await prepareRequest();
 
-    // const starWarsList: StarWarsCharacterListInstance = await StarWarsCharacterList.at(STAR_WARS_LIST_ADDRESS);
-
-    // const fdcHUB = await FDCHub.at(await starWarsList.getFdcHub());
     const fdcHUB = await FDCHub.at("0x48aC463d7975828989331F4De43341627b9c5f1D"); // coston2
 
     // Call to the FDC Hub protocol to provide attestation.
@@ -115,7 +98,7 @@ async function submitRequest() {
 async function getProof(roundId: number) {
     const request = await prepareRequest();
     const proofAndData = await fetch(
-        `${DA_LAYER_URL_COSTON2}fdc/get-proof-round-id-bytes`,
+        `${DA_LAYER_URL_COSTON2}fdc/proof-by-request-round`,
         {
             method: "POST",
             headers: {
@@ -131,10 +114,10 @@ async function getProof(roundId: number) {
     return await proofAndData.json();
 }
 
-// getProof(TARGET_ROUND_ID)
+// getProof(895313)
 //     .then((data) => {
-//         console.log("Proof and data:");
-//         console.log(JSON.stringify(data, undefined, 2));
+//         console.log("Proof and data:", data);
+//         // console.log(JSON.stringify(data, undefined, 2));
 //     })
 //     .catch((e) => {
 //         console.error(e);
@@ -142,21 +125,21 @@ async function getProof(roundId: number) {
 
 /* --------------------------------------------------- submit proof --------------------------------------------------- */
 
-async function submitProof(proofAndData?: any) {
-    // const dataAndProof = await getProof(TARGET_ROUND_ID);
-    // console.log(dataAndProof);
-    const starWarsList = await StarWarsCharacterList.at(STAR_WARS_LIST_ADDRESS);
+async function submitProof(roundId: number) {
+    const proofAndData = await getProof(roundId);
+    console.log('@@@@@@@@@@@@@@@@@@@@@@@@ proofAndData:', proofAndData);
+    const marketplace = await Marketplace.at(MARKETPLACE_ADDRESS);
 
-    const tx = await starWarsList.addCharacter({
+    const tx = await marketplace.recordFiatPayment({
         merkleProof: proofAndData.proof,
         data: proofAndData.response,
     });
-    console.log(tx.tx);
-    console.log(await starWarsList.getAllCharacters());
+    console.log('@@@@@@@@@@@@@@@@@@@@@@@@ tx.tx:', tx.tx);
+    // console.log(await marketplace.getAllOrders());
 }
 
 
-// submitProof()
+// submitProof(895377)
 //     .then((data) => {
 //         console.log("Submitted proof");
 //         process.exit(0);
