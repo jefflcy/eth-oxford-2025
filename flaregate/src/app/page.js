@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 
 // ----- Contract details (replace with actual values) -----
 const marketplaceAddress = "0x386d37629a915F0Bf74918b835E682d52Ea57E81"; // Replace with your deployed contract address
@@ -34,19 +34,24 @@ const contractAbi = [
 
 // ----- Navbar Component -----
 function Navbar({ onCreateOrder, onConnectWallet }) {
+  const { isConnected } = useAccount();
+
   return (
     <nav className="w-full flex items-center justify-between px-6 py-4 fixed top-0 z-20 bg-white shadow">
       {/* Logo */}
       <div className="text-2xl font-bold text-[#FF69B4]">FlareGate</div>
       {/* Action Buttons */}
       <div className="flex space-x-4">
-        <button
-          onClick={onCreateOrder}
-          className="bg-transparent border border-pink-500 text-pink-500 rounded-full px-4 py-2 transition hover:bg-pink-500 hover:text-white"
-        >
-          Create Order
-        </button>
-        <appkit-button />
+        {isConnected && (
+          <button
+            onClick={onCreateOrder}
+            className="bg-transparent border border-pink-500 text-pink-500 rounded-full px-4 py-2 transition hover:bg-pink-500 hover:text-white"
+          >
+            Create Order
+          </button>
+        )}
+<appkit-button/>
+
       </div>
     </nav>
   );
