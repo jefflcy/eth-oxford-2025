@@ -57,7 +57,7 @@ export default {
   		},
   		backgroundImage: {
   			'grid-pattern': 'url(/path/to/grid-pattern.png)',
-  			'grid-pattern-light': 'url(/path/to/grid-pattern-light.png)',
+  			'grid-pattern-light': 'url(/path/to/grid-pattern-light.png)'
   		}
   	}
   },
