@@ -22,7 +22,7 @@ enum OrderStatus {
 
 struct Order {
     uint256 id;
-    OrderStatus status; // 0: available, 1: accepted & pending, 2: completed, 99: cancelled
+    OrderStatus status;
     address onChainSeller;
     address offChainBuyer;
     uint256 amount; // amount of crypto sold in wei
@@ -48,7 +48,8 @@ contract Marketplace {
         address indexed by,
         uint256 deadline
     );
-    event OrderCompleted(uint256 indexed orderId, string offChainReference);
+    event OrderPaid(uint256 indexed orderId, address indexed by);
+    event OrderCompleted(uint256 indexed orderId);
 
     string[] public acceptedCurrencies;
     Order[] public allOrders;
@@ -60,23 +61,24 @@ contract Marketplace {
     // onChainSeller creates an order to sell crypto
     function createOrder(
         uint256 price,
-        string currency
+        string calldata currency
     ) external payable {
         address seller = msg.sender;
         uint256 amount = msg.value; // for now only support native token
 
         require(price > 0, "Price must be greater than 0");
         require(amount > 0, "Amount must be greater than 0");
-        require()
+        require(isValidCurrency(currency), "Invalid currency");
 
         // Create a new order
         Order memory newOrder = Order({
             id: allOrders.length,
-            status: 0,
+            status: OrderStatus.AVAILABLE,
             onChainSeller: seller,
             offChainBuyer: address(0),
             amount: amount,
-            price: price,
+            price: price, // amount in fiat multiplied by 100 (ie. 250.50 is 25050)
+            currency: currency,
             deadline: 2 ** 256 - 1 // max uint256 value
         });
 
@@ -113,7 +115,7 @@ contract Marketplace {
 
         require(order.status == OrderStatus.ACCEPTED, "Order is not accepted"); // state must only be accepted
         require(dto.paidAmt == order.price, "Invalid amount paid"); // must match the order price
-        require(dto.paidCurrency == order.currency, "Invalid currency paid"); // must match the order currency
+        require(keccak256(abi.encodePacked(dto.paidCurrency)) == keccak256(abi.encodePacked(order.currency)), "Invalid currency paid"); // must match the order currency
         require(dto.paidTimestamp <= order.deadline, "Order is expired"); // must not be expired, if expired gg to the off chain buyer 
 
         allOrders[dto.onChainOrderId].status = OrderStatus.PAID; // update the order status to paid
@@ -122,10 +124,13 @@ contract Marketplace {
 
     // offChainBuyer is able to claim his crypto tokens now
     function claimTokens(uint256 orderId) external {
-        Order memory order = allOrders[orderId];
+        Order storage order = allOrders[orderId];
         require(order.status == OrderStatus.PAID, "Order is not paid");
 
+        order.status = OrderStatus.COMPLETED; // update the order status to completed
         payable(order.offChainBuyer).transfer(order.amount); // pay the offChainBuyer
+
+        emit OrderCompleted(orderId);
     }
 
     // function to purge state of accepted orders that have past deadline
@@ -145,14 +150,14 @@ contract Marketplace {
         require(order.status == OrderStatus.AVAILABLE, "Order is not available"); // must not be accepted, paid, completed or cancelled
 
         // Update the order status
-        order.status = 99; // cancelled
+        order.status = OrderStatus.CANCELLED; // cancelled
         order.deadline = block.timestamp; // update the order deadline to be now (so when block is built, order is "expired")   
     }
 
     /* HELPER FUNCTIONS */
 
     // Helper function to determine if currency is accepted
-    function isValidCurrency(string memory curr) public pure returns (bool) {
+    function isValidCurrency(string calldata curr) public view returns (bool) {
         for (uint256 i = 0; i < acceptedCurrencies.length; i++) {
             if (keccak256(abi.encodePacked(acceptedCurrencies[i])) == keccak256(abi.encodePacked(curr))) {
                 return true;
