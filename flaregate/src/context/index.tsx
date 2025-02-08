@@ -1,5 +1,3 @@
-
-// context/index.tsx
 'use client'
 
 import { wagmiAdapter, projectId } from '@/config'

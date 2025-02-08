@@ -65,6 +65,7 @@ function CreateOrderModal({ onClose }) {
   const [paymentDetails, setPaymentDetails] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Revolut");
 
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Order created:", {
@@ -272,7 +273,7 @@ export default function Home() {
           transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-[#FF69B4]">FlareGate</h1>
+          <h1 className="text-4xl md:text-6xl font-bold text-[#FF69B4]"> </h1>
           <p className="text-xl md:text-2xl text-gray-600">
               All Orders
           </p>
