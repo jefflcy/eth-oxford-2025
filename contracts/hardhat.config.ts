@@ -53,44 +53,44 @@ const config: HardhatUserConfig = {
     }
   },
   networks: {
-    goerli: {
-      url: `https://eth-goerli.alchemyapi.io/v2/${GOERLI_API_URL}`,
-      accounts: [`${PRIVATE_KEY}`]
-    },
-    sepolia: {
-      url: `https://rpc.ankr.com/eth_sepolia/${SEPOLIA_API_KEY}`,
-      accounts: [`${PRIVATE_KEY}`]
-    },
-    coston: {
-      url: "https://coston-api.flare.network/ext/bc/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
-      accounts: [`${PRIVATE_KEY}`],
-      chainId: 16
-    },
+    // goerli: {
+    //   url: `https://eth-goerli.alchemyapi.io/v2/${GOERLI_API_URL}`,
+    //   accounts: [`${PRIVATE_KEY}`]
+    // },
+    // sepolia: {
+    //   url: `https://rpc.ankr.com/eth_sepolia/${SEPOLIA_API_KEY}`,
+    //   accounts: [`${PRIVATE_KEY}`]
+    // },
+    // coston: {
+    //   url: "https://coston-api.flare.network/ext/bc/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
+    //   accounts: [`${PRIVATE_KEY}`],
+    //   chainId: 16
+    // },
     coston2: {
       url: "https://coston2-api.flare.network/ext/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
       accounts: [`${PRIVATE_KEY}`],
       chainId: 114
     },
-    songbird: {
-      url: "https://songbird-api.flare.network/ext/bc/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
-      accounts: [`${PRIVATE_KEY}`],
-      chainId: 19
-    },
-    flare: {
-      url: "https://flare-api.flare.network/ext/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
-      accounts: [`${PRIVATE_KEY}`],
-      chainId: 14,
-    }
+    // songbird: {
+    //   url: "https://songbird-api.flare.network/ext/bc/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
+    //   accounts: [`${PRIVATE_KEY}`],
+    //   chainId: 19
+    // },
+    // flare: {
+    //   url: "https://flare-api.flare.network/ext/C/rpc" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : ""),
+    //   accounts: [`${PRIVATE_KEY}`],
+    //   chainId: 14,
+    // }
   },
   etherscan: {
-    apiKey: {
-      "goerli": `${ETHERSCAN_API_URL}`,
-      "coston": `${FLARESCAN_API_KEY}`,
-      "coston2": `${FLARESCAN_API_KEY}`,
-      "songbird": `${FLARESCAN_API_KEY}`,
-      "flare": `${FLARESCAN_API_KEY}`,
-      "sepolia": `${ETHERSCAN_API_URL}`,
-    },
+    // apiKey: {
+      // "goerli": `${ETHERSCAN_API_URL}`,
+      // "coston": `${FLARESCAN_API_KEY}`,
+      // "coston2": `${FLARESCAN_API_KEY}`,
+      // "songbird": `${FLARESCAN_API_KEY}`,
+      // "flare": `${FLARESCAN_API_KEY}`,
+      // "sepolia": `${ETHERSCAN_API_URL}`,
+    // },
     customChains: [
       {
         network: "coston",
@@ -160,7 +160,9 @@ if (USE_FLARESCAN) {
   ]
 
   for (let i = 0; i < FLARESCAN_DATA.length; i++) {
-    config.etherscan.customChains[i].urls = FLARESCAN_DATA[i]
+    if (config.etherscan && config.etherscan.customChains) {
+      config.etherscan.customChains[i].urls = FLARESCAN_DATA[i];
+    }
   }
 }
 
