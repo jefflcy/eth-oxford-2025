@@ -1,70 +1,320 @@
 "use client";
 
-import { AuroraBackground } from "@/components/ui/aurora-background";
-import { Globe } from "@/components/ui/globe";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import { AppKitButton } from "@reown/appkit";
-import { motion } from "framer-motion";
+import { useContractRead } from "wagmi";
 
-export default function Home() {
-  const handleLogin = () => {
-    console.log("Navigating to login page...");
-    // Simulate login and navigation
-    createOrder();
-    acceptOrder();
-    recordFiatPayment();
-    claimTokens();
-  };
+// ----- Contract details (replace with actual values) -----
+const contractAddress = "0xYourContractAddress"; // Replace with your deployed contract address
+const contractAbi = [
+  {
+    inputs: [],
+    name: "getAllOrders",
+    outputs: [
+      {
+        components: [
+          { internalType: "uint256", name: "id", type: "uint256" },
+          { internalType: "uint8", name: "status", type: "uint8" },
+          { internalType: "address", name: "onChainSeller", type: "address" },
+          { internalType: "address", name: "offChainBuyer", type: "address" },
+          { internalType: "uint256", name: "amount", type: "uint256" },
+          { internalType: "uint256", name: "price", type: "uint256" },
+          { internalType: "string", name: "currency", type: "string" },
+          { internalType: "uint256", name: "deadline", type: "uint256" },
+        ],
+        internalType: "struct Order[]",
+        name: "",
+        type: "tuple[]",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+];
 
-  const createOrder = () => {
-    console.log("createOrder function triggered by onChainSeller");
-    // Implement createOrder logic here
-  };
+// ----- Navbar Component -----
+function Navbar({ onCreateOrder, onConnectWallet }) {
+  return (
+    <nav className="w-full flex items-center justify-between px-6 py-4 fixed top-0 z-20">
+      {/* Logo */}
+      <div className="text-2xl font-bold">FlareGate</div>
+      {/* Action Buttons */}
+      <div className="flex space-x-4">
+        <button
+          onClick={onCreateOrder}
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 transition"
+        >
+          Create Order
+        </button>
+        <appkit-button />
+      </div>
+    </nav>
+  );
+}
 
-  const acceptOrder = () => {
-    console.log("acceptOrder function triggered by offChainBuyer");
-    // Implement acceptOrder logic here
-  };
+// ----- CreateOrderModal Component -----
+function CreateOrderModal({ onClose }) {
+  const [price, setPrice] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [cflr2, setCflr2] = useState("");
+  const [paymentDetails, setPaymentDetails] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState("Revolut");
 
-  const recordFiatPayment = () => {
-    console.log("recordFiatPayment function triggered by the service");
-    // Implement recordFiatPayment logic here
-  };
-
-  const claimTokens = () => {
-    console.log("claimTokens function triggered by offChainSeller");
-    // Implement claimTokens logic here
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    console.log("Order created:", {
+      price,
+      currency,
+      cflr2,
+      paymentDetails,
+      paymentMethod,
+    });
+    // Implement order creation logic here
+    onClose();
   };
 
   return (
-    <AuroraBackground>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 flex items-center justify-center z-50"
+    >
+      <div className="absolute inset-0 bg-black opacity-50" onClick={onClose}></div>
       <motion.div
-        initial={{ opacity: 0.0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{
-          delay: 0.3,
-          duration: 0.8,
-          ease: "easeInOut",
-        }}
-        className="relative flex flex-col gap-4 items-center justify-center px-4"
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.9 }}
+        className="bg-white text-black rounded-lg p-6 z-50 w-96"
       >
-        <div className="text-3xl md:text-7xl font-bold dark:text-white text-center">
-          Background <br /> lights are cool you know.
-        </div>
-        <div className="font-extralight text-base md:text-4xl dark:text-neutral-200 py-4">
-          And this, is chemical burn.
-        </div>
-        <button className="bg-black dark:bg-white rounded-full w-fit text-white dark:text-black px-4 py-2">
-          Debug now
-        </button>
-        <appkit-button/>
-        {/* <button
-          onClick={handleLogin}
-          className="mt-4 bg-blue-500 text-white rounded-full px-6 py-2"
-        >
-          Connect Wallet
-        </button> */}
+        <h2 className="text-xl font-bold mb-4">Create Order</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Price</label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="Enter price"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Currency</label>
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="w-full p-2 border rounded"
+            >
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Number of CFLR2</label>
+            <input
+              type="number"
+              value={cflr2}
+              onChange={(e) => setCflr2(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="Enter number of CFLR2"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Payment Details</label>
+            <input
+              type="email"
+              value={paymentDetails}
+              onChange={(e) => setPaymentDetails(e.target.value)}
+              className="w-full p-2 border rounded"
+              placeholder="Enter Revolut email"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Payment Method</label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full p-2 border rounded"
+            >
+              <option value="Revolut">Revolut</option>
+            </select>
+          </div>
+          <div className="flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-300 hover:bg-gray-400 text-black rounded-full px-4 py-2 transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 transition"
+            >
+              Submit Order
+            </button>
+          </div>
+        </form>
       </motion.div>
-        {/* <Globe /> */}
-    </AuroraBackground>
+    </motion.div>
+  );
+}
+
+// ----- OrderModal Component for accepting an order -----
+function OrderModal({ order, onClose }) {
+  // Order state: "idle" (waiting for action); "pending" (waiting for payment/attestation); "accepted" (payment complete)
+  const [status, setStatus] = useState("idle");
+
+  const handleAcceptOrder = () => {
+    setStatus("pending");
+    // Simulate pending state for 90 seconds
+    setTimeout(() => {
+      setStatus("accepted");
+    }, 90000);
+  };
+
+  const handleClaimTokens = () => {
+    // Simulate claiming tokens, then close the modal
+    onClose();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 flex items-center justify-center z-50"
+    >
+      <div className="absolute inset-0 bg-black opacity-50" onClick={onClose}></div>
+      <motion.div
+        initial={{ scale: 0.9 }}
+        animate={{ scale: 1 }}
+        exit={{ scale: 0.9 }}
+        className="bg-white text-black rounded-lg p-6 z-50 w-80"
+      >
+        <h2 className="text-xl font-bold mb-4">{order.title}</h2>
+        <p className="mb-2">You pay {order.price}</p>
+        <p className="mb-4">You get {order.quantity}</p>
+        {status === "idle" && (
+          <button
+            onClick={handleAcceptOrder}
+            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 transition w-full"
+          >
+            Accept Order
+          </button>
+        )}
+        {status === "pending" && (
+          <div className="flex items-center justify-center space-x-2">
+            <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <span>Waiting for payment and attestation...</span>
+          </div>
+        )}
+        {status === "accepted" && (
+          <div className="flex flex-col items-center space-y-4">
+            <div className="text-green-500 text-4xl">✓</div>
+            <button
+              onClick={handleClaimTokens}
+              className="bg-green-500 hover:bg-green-600 text-white rounded-full px-4 py-2 transition w-full"
+            >
+              Claim Tokens
+            </button>
+          </div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ----- Main Page Component -----
+export default function Home() {
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
+
+  // Use Wagmi's useContractRead to fetch orders from your contract
+  const { data: ordersData, isLoading, isError } = useContractRead({
+    address: contractAddress,
+    abi: contractAbi,
+    functionName: "getAllOrders",
+  });
+
+  // Transform fetched orders (if any) into the shape expected by the UI.
+  // For example, we convert BigNumber fields to strings.
+  const fetchedOrders = ordersData
+    ? ordersData.map((order) => ({
+        id: order.id.toString(),
+        title: `Order #${order.id.toString()}`,
+        price: `${order.price.toString()} ${order.currency}`,
+        quantity: `${order.amount.toString()} CFLR2`,
+      }))
+    : [];
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white relative">
+      {/* Navbar */}
+      <Navbar
+        onCreateOrder={() => setShowCreateOrderModal(true)}
+        onConnectWallet={() => console.log("Navbar: Connect Wallet clicked")}
+      />
+      <div className="pt-20 pb-8 px-6">
+        {/* Page Title */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl md:text-6xl font-bold">FlareGate</h1>
+          <p className="text-xl md:text-2xl text-gray-300">
+            The Future of On-Chain P2P Exchange
+          </p>
+        </motion.div>
+        {/* Grid of Order Cards */}
+        {isLoading ? (
+          <p>Loading orders...</p>
+        ) : isError ? (
+          <p>Error fetching orders</p>
+        ) : (
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1 }}
+          >
+            {fetchedOrders.length === 0 ? (
+              <p>No orders found.</p>
+            ) : (
+              fetchedOrders.map((order) => (
+                <motion.div
+                  key={order.id}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedOrder(order)}
+                  className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-pointer hover:bg-white/20 transition"
+                >
+                  <h2 className="text-lg font-semibold">{order.title}</h2>
+                  <p className="text-sm text-gray-300">{order.price}</p>
+                  <p className="text-sm text-gray-300">{order.quantity}</p>
+                  <p className="text-xs text-gray-400">Click for details</p>
+                </motion.div>
+              ))
+            )}
+          </motion.div>
+        )}
+      </div>
+      {/* Modals */}
+      <AnimatePresence>
+        {selectedOrder && (
+          <OrderModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />
+        )}
+        {showCreateOrderModal && (
+          <CreateOrderModal onClose={() => setShowCreateOrderModal(false)} />
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
