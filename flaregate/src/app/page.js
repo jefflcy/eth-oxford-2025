@@ -1,5 +1,6 @@
 "use client";
 
+import { supabase } from '../lib/supabaseClient';
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
 import { useAccount, useReadContract } from "wagmi";
@@ -64,20 +65,31 @@ function CreateOrderModal({ onClose }) {
   const [cflr2, setCflr2] = useState("");
   const [paymentDetails, setPaymentDetails] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Revolut");
+  const [loading, setLoading] = useState(false);
 
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Order created:", {
-      price,
-      currency,
-      cflr2,
-      paymentDetails,
-      paymentMethod,
-    });
-    // Implement order creation logic here
-    onClose();
+    setLoading(true);
+
+    // Insert only PK (UUID) and paymentDetails into Supabase
+    const { data, error } = await supabase
+      .from("orders")
+      .insert([
+        { paymentDetails }
+      ]);
+
+    if (error) {
+      console.error("Error inserting order:", error.message);
+      alert("Failed to create order!");
+    } else {
+      console.log("Order created:", data);
+      alert("Order created successfully!");
+      onClose(); // Close modal after success
+    }
+
+    setLoading(false);
   };
+
 
   return (
     <motion.div
