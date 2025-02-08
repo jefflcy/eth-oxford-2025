@@ -66,10 +66,10 @@ async function prepareRequest() {
     return data;
 }
 
-prepareRequest().then((data) => {
-    console.log("Prepared request:", data);
-    process.exit(0);
-});
+// prepareRequest().then((data) => {
+//     console.log("Prepared request:", data);
+//     process.exit(0);
+// });
 
 /* --------------------------------------------------- requestAttestation --------------------------------------------------- */
 
