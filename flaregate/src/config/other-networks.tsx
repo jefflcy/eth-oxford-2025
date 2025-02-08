@@ -1,6 +1,8 @@
 import { defineChain } from "@reown/appkit/networks";
 
-export const flareConston2 = defineChain({
+const FLARE_RPC_API_KEY = process.env.FLARE_RPC_API_KEY;
+
+export const flareCoston2 = defineChain({
     id: 114,
     chainNamespace: "eip155",
     caipNetworkId: "eip155:114",
@@ -12,7 +14,7 @@ export const flareConston2 = defineChain({
     },
     rpcUrls: {
         default: {
-            http: ["https://coston2.api.flare.network/ext/C/rpc"],
+            http: ["https://rpc.ankr.com/flare_coston2" + (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : "")],
         },
     },
     blockExplorers: {

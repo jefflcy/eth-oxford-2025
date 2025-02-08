@@ -3,10 +3,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { AppKitButton } from "@reown/appkit";
-import { useContractRead } from "wagmi";
+import { useReadContract } from "wagmi";
 
 // ----- Contract details (replace with actual values) -----
-const contractAddress = "0xYourContractAddress"; // Replace with your deployed contract address
+const marketplaceAddress = "0x386d37629a915F0Bf74918b835E682d52Ea57E81"; // Replace with your deployed contract address
 const contractAbi = [
   {
     inputs: [],
@@ -236,12 +236,13 @@ export default function Home() {
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
 
   // Use Wagmi's useContractRead to fetch orders from your contract
-  const { data: ordersData, isLoading, isError } = useContractRead({
-    address: contractAddress,
+  const { data: ordersData, isLoading, isError } = useReadContract({
+    address: marketplaceAddress,
     abi: contractAbi,
     functionName: "getAllOrders",
   });
-
+  
+  console.log(ordersData);
   // Transform fetched orders (if any) into the shape expected by the UI.
   // For example, we convert BigNumber fields to strings.
   const fetchedOrders = ordersData
