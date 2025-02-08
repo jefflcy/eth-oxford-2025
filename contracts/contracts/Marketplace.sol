@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {ContractRegistry} from "@flarenetwork/flare-periphery-contracts/coston/ContractRegistry.sol";
+import {ContractRegistry} from "@flarenetwork/flare-periphery-contracts/coston2/ContractRegistry.sol";
 
 // Dummy import to get artifacts for IFDCHub
-import {IFdcHub} from "@flarenetwork/flare-periphery-contracts/coston/IFdcHub.sol";
-import {IFdcRequestFeeConfigurations} from "@flarenetwork/flare-periphery-contracts/coston/IFdcRequestFeeConfigurations.sol";
+import {IFdcHub} from "@flarenetwork/flare-periphery-contracts/coston2/IFdcHub.sol";
+import {IFdcRequestFeeConfigurations} from "@flarenetwork/flare-periphery-contracts/coston2/IFdcRequestFeeConfigurations.sol";
 
-import {IJsonApi} from "@flarenetwork/flare-periphery-contracts/coston/IJsonApi.sol";
+import {IJsonApi} from "@flarenetwork/flare-periphery-contracts/coston2/IJsonApi.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-
-import {IEVMTransaction} from "@flarenetwork/flare-periphery-contracts/coston/IEVMTransaction.sol";
 
 enum OrderStatus {
     AVAILABLE,
@@ -105,7 +103,7 @@ contract Marketplace {
     // called by backend during submitProof to record attested fiat payment
     function recordFiatPayment(IJsonApi.Proof calldata _proof) public {
         require(ContractRegistry.auxiliaryGetIJsonApiVerification().verifyJsonApi(_proof), "Invalid proof");
-
+        
         DataTransportObject memory dto = abi.decode(
             _proof.data.responseBody.abi_encoded_data,
             (DataTransportObject)
@@ -155,6 +153,11 @@ contract Marketplace {
     }
 
     /* HELPER FUNCTIONS */
+
+    // Helper function to get all orders
+    function getAllOrders() public view returns (Order[] memory) {
+        return allOrders;
+    }
 
     // Helper function to determine if currency is accepted
     function isValidCurrency(string calldata curr) public view returns (bool) {
