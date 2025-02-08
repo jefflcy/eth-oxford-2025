@@ -3,35 +3,9 @@
 import { supabase } from '../lib/supabaseClient';
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { useAccount, useReadContract } from "wagmi";
-
-// ----- Contract details (replace with actual values) -----
-const marketplaceAddress = "0x386d37629a915F0Bf74918b835E682d52Ea57E81"; // Replace with your deployed contract address
-const contractAbi = [
-  {
-    inputs: [],
-    name: "getAllOrders",
-    outputs: [
-      {
-        components: [
-          { internalType: "uint256", name: "id", type: "uint256" },
-          { internalType: "uint8", name: "status", type: "uint8" },
-          { internalType: "address", name: "onChainSeller", type: "address" },
-          { internalType: "address", name: "offChainBuyer", type: "address" },
-          { internalType: "uint256", name: "amount", type: "uint256" },
-          { internalType: "uint256", name: "price", type: "uint256" },
-          { internalType: "string", name: "currency", type: "string" },
-          { internalType: "uint256", name: "deadline", type: "uint256" },
-        ],
-        internalType: "struct Order[]",
-        name: "",
-        type: "tuple[]",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-];
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { marketplaceABI, marketplaceAddress } from '@/lib/marketplaceContract';
+import { parseUnits } from "ethers";
 
 // ----- Navbar Component -----
 function Navbar({ onCreateOrder, onConnectWallet }) {
@@ -66,28 +40,74 @@ function CreateOrderModal({ onClose }) {
   const [paymentDetails, setPaymentDetails] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("Revolut");
   const [loading, setLoading] = useState(false);
+  const { writeContractAsync } = useWriteContract();
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
-    // Insert only PK (UUID) and paymentDetails into Supabase
-    const { data, error } = await supabase
-      .from("orders")
-      .insert([
-        { paymentDetails }
-      ]);
-
-    if (error) {
-      console.error("Error inserting order:", error.message);
-      alert("Failed to create order!");
-    } else {
-      console.log("Order created:", data);
-      alert("Order created successfully!");
-      onClose(); // Close modal after success
+  
+    // Convert price to cents and validate
+    let sanitizedPrice = parseFloat(price);
+    if (isNaN(sanitizedPrice) || sanitizedPrice <= 0) {
+      alert("Invalid price. Please enter a positive number.");
+      setLoading(false);
+      return;
+    }
+    sanitizedPrice = Math.round(sanitizedPrice * 100);
+  
+    // Validate currency (uppercase and allowed list)
+    const allowedCurrencies = ["USD", "EUR", "GBP"];
+    const sanitizedCurrency = currency.toUpperCase();
+    if (!allowedCurrencies.includes(sanitizedCurrency)) {
+      alert("Invalid currency. Allowed values: USD, EUR, GBP.");
+      setLoading(false);
+      return;
+    }
+  
+    // Validate other required fields
+    if (!cflr2 || isNaN(parseFloat(cflr2)) || parseFloat(cflr2) <= 0) {
+      alert("Invalid number of CFLR2.");
+      setLoading(false);
+      return;
+    }
+    if (!paymentDetails.trim()) {
+      alert("Payment details cannot be empty.");
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    try {
+      const tx = await writeContractAsync({
+        value: parseUnits(cflr2, 18),
+        address: marketplaceAddress,
+        abi: marketplaceABI,
+        functionName: "createOrder",
+        args: [sanitizedPrice, sanitizedCurrency],
+      });
+      await tx.wait();
+      console.log("Order created on blockchain:", tx);
+    } catch (error) {
+      console.error("Error creating order on blockchain:", error);
+      alert("Failed to create order on blockchain!");
+      setLoading(false);
+      return;
+    }
+    
+    // NOT TESTED YET
+    // Insert only PK (UUID) and paymentDetails into Supabase
+    // const { data, error } = await supabase.from("orders").insert([{ paymentDetails }]);
+  
+    // if (error) {
+    //   console.error("Error inserting order:", error.message);
+    //   alert("Failed to create order!");
+    // } else {
+    //   console.log("Order created:", data);
+    //   alert("Order created successfully!");
+    //   onClose();
+    // }
+  
+    // setLoading(false);
   };
 
 
@@ -130,13 +150,13 @@ function CreateOrderModal({ onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Number of CFLR2</label>
+            <label className="block text-sm font-medium mb-1">Amount of CFLR2</label>
             <input
               type="number"
               value={cflr2}
               onChange={(e) => setCflr2(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter number of CFLR2"
+              placeholder="Enter amount of CFLR2"
               required
             />
           </div>
@@ -186,13 +206,31 @@ function CreateOrderModal({ onClose }) {
 function OrderModal({ order, onClose }) {
   // Order state: "idle" (waiting for action); "pending" (waiting for payment/attestation); "accepted" (payment complete)
   const [status, setStatus] = useState("idle");
+  const { writeContractAsync } = useWriteContract();
 
-  const handleAcceptOrder = () => {
+  const handleAcceptOrder = async () => {
     setStatus("pending");
-    // Simulate pending state for 90 seconds
-    setTimeout(() => {
-      setStatus("accepted");
-    }, 90000);
+
+    try {
+      // sign tx for accepting order
+      const tx = await writeContractAsync({
+        address: marketplaceAddress,
+        abi: marketplaceABI,
+        functionName: "acceptOrder",
+        args: [parseInt(order.id)],
+      });
+  
+      const receipt = await tx.wait();
+
+      // once tx is confirmed, set status to accepted
+      if (receipt.status === 1) {
+        setStatus("accepted");
+      }
+    } catch (error) {
+      console.error("Error accepting order:", error);
+      alert("Failed to accept order!");
+      setStatus("idle");
+    }
   };
 
   const handleClaimTokens = () => {
@@ -255,7 +293,7 @@ export default function Home() {
   // Use Wagmi's useReadContract to fetch orders from your contract
   const { data: ordersData, isLoading, isError } = useReadContract({
     address: marketplaceAddress,
-    abi: contractAbi,
+    abi: marketplaceABI,
     functionName: "getAllOrders",
   });
   
