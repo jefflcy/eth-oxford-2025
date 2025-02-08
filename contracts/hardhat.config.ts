@@ -83,14 +83,14 @@ const config: HardhatUserConfig = {
     // }
   },
   etherscan: {
-    // apiKey: {
+    apiKey: {
       // "goerli": `${ETHERSCAN_API_URL}`,
       // "coston": `${FLARESCAN_API_KEY}`,
-      // "coston2": `${FLARESCAN_API_KEY}`,
+      "coston2": `${FLARESCAN_API_KEY}`,
       // "songbird": `${FLARESCAN_API_KEY}`,
       // "flare": `${FLARESCAN_API_KEY}`,
       // "sepolia": `${ETHERSCAN_API_URL}`,
-    // },
+    },
     customChains: [
       {
         network: "coston",
