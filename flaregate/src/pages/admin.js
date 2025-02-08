@@ -34,7 +34,7 @@ export default function Admin() {
     );
   }
 
-  if (error) return <div>Error loading response.</div>;
+  // Keep showing the loading message if there's an error fetching data
   if (!data) return <div>Loading webhook response...</div>;
 
   return (
