@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-import ContextProvider from '@/app/context';
+import ContextProvider from '@/context';
 import { headers } from "next/headers"; // added
 
 export const metadata: Metadata = {

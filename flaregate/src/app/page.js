@@ -1,7 +1,8 @@
 "use client";
 
-import { Globe } from "@/components/ui/globe";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { Globe } from "@/components/ui/globe";
+import { AppKitButton } from "@reown/appkit";
 import { motion } from "framer-motion";
 
 export default function Home() {
@@ -55,14 +56,15 @@ export default function Home() {
         <button className="bg-black dark:bg-white rounded-full w-fit text-white dark:text-black px-4 py-2">
           Debug now
         </button>
-        <button
+        <appkit-button/>
+        {/* <button
           onClick={handleLogin}
           className="mt-4 bg-blue-500 text-white rounded-full px-6 py-2"
         >
           Connect Wallet
-        </button>
+        </button> */}
       </motion.div>
-        <Globe />
+        {/* <Globe /> */}
     </AuroraBackground>
   );
 }
