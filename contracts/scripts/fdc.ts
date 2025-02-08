@@ -14,10 +14,11 @@ function toHex(data: string) {
 }
 
 const { JQ_VERIFIER_URL_TESTNET, JQ_API_KEY, DA_LAYER_URL_COSTON2 } = process.env;
-const WEB2_JSON_API_URL = "https://pastes.io/download/sample-payments-webhook-response-1";
+const WEB2_JSON_API_URL = "https://pastes.io/download/sample-payments-webhook-response-1"; // MOCK DATA
 
-// UPDATE THIS WITH LATEST DEPLOYED CONTRACT ADDRESS
+// UPDATE THIS!
 const MARKETPLACE_ADDRESS = ""; // coston2
+const FDC_HUB_ADDRESS_COSTON2 = "0x48aC463d7975828989331F4De43341627b9c5f1D"; // coston2
 
 /* --------------------------------------------------- prepareRequest --------------------------------------------------- */
 
@@ -66,7 +67,7 @@ const votingEpochDurationSeconds = 90; // coston2
 async function submitRequest() {
     const requestData = await prepareRequest();
 
-    const fdcHUB = await FDCHub.at("0x48aC463d7975828989331F4De43341627b9c5f1D"); // coston2
+    const fdcHUB = await FDCHub.at(FDC_HUB_ADDRESS_COSTON2); // coston2
 
     // Call to the FDC Hub protocol to provide attestation.
     const tx = await fdcHUB.requestAttestation(requestData.abiEncodedRequest, {
