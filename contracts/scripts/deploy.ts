@@ -16,7 +16,6 @@ async function main() {
 
         const result = await run("verify:verify", {
             address: marketplace.address,
-            // address: "0x2D765DE0d3B3fEa923140CaD379bA85E9D7991DF",
             constructorArguments: args,
         })
 
