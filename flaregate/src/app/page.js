@@ -1,8 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { AppKitButton } from "@reown/appkit";
+import { useState } from "react";
 import { useReadContract } from "wagmi";
 
 // ----- Contract details (replace with actual values) -----
@@ -36,14 +35,14 @@ const contractAbi = [
 // ----- Navbar Component -----
 function Navbar({ onCreateOrder, onConnectWallet }) {
   return (
-    <nav className="w-full flex items-center justify-between px-6 py-4 fixed top-0 z-20">
+    <nav className="w-full flex items-center justify-between px-6 py-4 fixed top-0 z-20 bg-white shadow">
       {/* Logo */}
-      <div className="text-2xl font-bold">FlareGate</div>
+      <div className="text-2xl font-bold text-[#FF69B4]">FlareGate</div>
       {/* Action Buttons */}
       <div className="flex space-x-4">
         <button
           onClick={onCreateOrder}
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 transition"
+          className="bg-transparent border border-pink-500 text-pink-500 rounded-full px-4 py-2 transition hover:bg-pink-500 hover:text-white"
         >
           Create Order
         </button>
@@ -88,7 +87,7 @@ function CreateOrderModal({ onClose }) {
         exit={{ scale: 0.9 }}
         className="bg-white text-black rounded-lg p-6 z-50 w-96"
       >
-        <h2 className="text-xl font-bold mb-4">Create Order</h2>
+        <h2 className="text-xl font-bold mb-4 text-[#FF69B4]">Create Order</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Price</label>
@@ -96,7 +95,7 @@ function CreateOrderModal({ onClose }) {
               type="number"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border border-gray-300 rounded"
               placeholder="Enter price"
               required
             />
@@ -106,7 +105,7 @@ function CreateOrderModal({ onClose }) {
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border border-gray-300 rounded"
             >
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
@@ -118,7 +117,7 @@ function CreateOrderModal({ onClose }) {
               type="number"
               value={cflr2}
               onChange={(e) => setCflr2(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border border-gray-300 rounded"
               placeholder="Enter number of CFLR2"
               required
             />
@@ -129,7 +128,7 @@ function CreateOrderModal({ onClose }) {
               type="email"
               value={paymentDetails}
               onChange={(e) => setPaymentDetails(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border border-gray-300 rounded"
               placeholder="Enter Revolut email"
               required
             />
@@ -139,7 +138,7 @@ function CreateOrderModal({ onClose }) {
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border border-gray-300 rounded"
             >
               <option value="Revolut">Revolut</option>
             </select>
@@ -148,13 +147,13 @@ function CreateOrderModal({ onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-300 hover:bg-gray-400 text-black rounded-full px-4 py-2 transition"
+              className="bg-transparent border border-[#FF69B4] text-[#FF69B4] rounded-full px-4 py-2 transition hover:bg-[#FF69B4] hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 transition"
+              className="bg-[#FF69B4] hover:bg-[#FF5BA0] text-white rounded-full px-4 py-2 transition"
             >
               Submit Order
             </button>
@@ -203,23 +202,23 @@ function OrderModal({ order, onClose }) {
         {status === "idle" && (
           <button
             onClick={handleAcceptOrder}
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-4 py-2 transition w-full"
+            className="bg-[#FF69B4] hover:bg-[#FF5BA0] text-white rounded-full px-4 py-2 transition w-full"
           >
             Accept Order
           </button>
         )}
         {status === "pending" && (
           <div className="flex items-center justify-center space-x-2">
-            <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
             <span>Waiting for payment and attestation...</span>
           </div>
         )}
         {status === "accepted" && (
           <div className="flex flex-col items-center space-y-4">
-            <div className="text-green-500 text-4xl">✓</div>
+            <div className="text-[#FF69B4] text-4xl">✓</div>
             <button
               onClick={handleClaimTokens}
-              className="bg-green-500 hover:bg-green-600 text-white rounded-full px-4 py-2 transition w-full"
+              className="bg-[#FF69B4] hover:bg-[#FF5BA0] text-white rounded-full px-4 py-2 transition w-full"
             >
               Claim Tokens
             </button>
@@ -235,16 +234,15 @@ export default function Home() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showCreateOrderModal, setShowCreateOrderModal] = useState(false);
 
-  // Use Wagmi's useContractRead to fetch orders from your contract
+  // Use Wagmi's useReadContract to fetch orders from your contract
   const { data: ordersData, isLoading, isError } = useReadContract({
     address: marketplaceAddress,
     abi: contractAbi,
     functionName: "getAllOrders",
   });
   
-  console.log(ordersData);
+  console.log("Orders Data:", ordersData);
   // Transform fetched orders (if any) into the shape expected by the UI.
-  // For example, we convert BigNumber fields to strings.
   const fetchedOrders = ordersData
     ? ordersData.map((order) => ({
         id: order.id.toString(),
@@ -255,7 +253,7 @@ export default function Home() {
     : [];
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white relative">
+    <div className="min-h-screen bg-white text-black relative">
       {/* Navbar */}
       <Navbar
         onCreateOrder={() => setShowCreateOrderModal(true)}
@@ -269,9 +267,9 @@ export default function Home() {
           transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
           className="text-center mb-8"
         >
-          <h1 className="text-4xl md:text-6xl font-bold">FlareGate</h1>
-          <p className="text-xl md:text-2xl text-gray-300">
-            The Future of On-Chain P2P Exchange
+          <h1 className="text-4xl md:text-6xl font-bold text-[#FF69B4]">FlareGate</h1>
+          <p className="text-xl md:text-2xl text-gray-600">
+              All Orders
           </p>
         </motion.div>
         {/* Grid of Order Cards */}
@@ -295,12 +293,12 @@ export default function Home() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedOrder(order)}
-                  className="bg-white/10 backdrop-blur rounded-lg p-4 cursor-pointer hover:bg-white/20 transition"
+                  className="group bg-white border border-[#FF69B4] rounded-lg p-4 cursor-pointer hover:bg-[#FF69B4] hover:text-white transition"
                 >
-                  <h2 className="text-lg font-semibold">{order.title}</h2>
-                  <p className="text-sm text-gray-300">{order.price}</p>
-                  <p className="text-sm text-gray-300">{order.quantity}</p>
-                  <p className="text-xs text-gray-400">Click for details</p>
+                  <h2 className="text-lg font-semibold group-hover:text-white">{order.title}</h2>
+                  <p className="text-sm text-black group-hover:text-white">{order.price}</p>
+                  <p className="text-sm text-black group-hover:text-white">{order.quantity}</p>
+                  <p className="text-xs text-gray-500 group-hover:text-white">Click for details</p>
                 </motion.div>
               ))
             )}
