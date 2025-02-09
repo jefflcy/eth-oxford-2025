@@ -131,6 +131,7 @@ contract Marketplace {
     function claimTokens(uint256 orderId) external {
         Order storage order = allOrders[orderId];
         require(order.status == OrderStatus.PAID, "Order is not paid");
+        require(order.offChainBuyer == msg.sender, "Not your order to claim");
 
         order.status = OrderStatus.COMPLETED; // update the order status to completed
         payable(order.offChainBuyer).transfer(order.amount); // pay the offChainBuyer
