@@ -1,32 +1,13 @@
 "use client";
 
-require('dotenv').config();
-
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import { prepareRequest } from "@/lib/fdc"; // Updated import
+import { prepareRequest, submitRequest, submitProof } from "@/lib/fdc";
 import { NavBar } from "../components/ui/NavBar";
 
-// A simple fetcher function for SWR
+// A simple fetcher function for SWR (for Step 1)
 const fetcher = (url) => fetch(url).then((res) => res.json());
-
-// --- Dummy simulation functions for additional steps ---
-function simulateSubmitRequest() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(1234);
-    }, 90000);
-  });
-}
-
-function simulateSubmitProof() {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve("0xTXHASH123");
-    }, 2000);
-  });
-}
 
 export default function Admin() {
   const router = useRouter();
@@ -41,35 +22,54 @@ export default function Admin() {
   const step1Completed = !!data && !error;
 
   // --- Multi-step state for Steps 2–4 ---
-  const [prepareStatus, setPrepareStatus] = useState("idle");
-  const [attestationStatus, setAttestationStatus] = useState("idle");
-  const [updateStatus, setUpdateStatus] = useState("idle");
-  const [roundId, setRoundId] = useState(null);
+  const [prepareStatus, setPrepareStatus] = useState("idle"); // "idle", "loading", "done"
+  const [attestationStatus, setAttestationStatus] = useState("idle"); // "idle", "loading", "done"
+  const [updateStatus, setUpdateStatus] = useState("idle"); // "idle", "loading", "done"
+  const [roundIdValue, setRoundIdValue] = useState(null);
   const [txHash, setTxHash] = useState(null);
 
-  // --- Handlers for each step ---
+  // Handler for Step 2: Prepare Request
   const handlePrepareRequest = async () => {
     setPrepareStatus("loading");
-    const result = await prepareRequest();
-    console.log('@@@@@@@@@@@@@@@@@@@@@@@@ result:', result);
-    setPrepareStatus("done");
+    try {
+      const result = await prepareRequest();
+      console.log("Prepare Request result:", result);
+      setPrepareStatus("done");
+    } catch (err) {
+      console.error("Error in prepareRequest:", err);
+      setPrepareStatus("idle");
+    }
   };
 
+  // Handler for Step 3: Request Attestation using submitRequest
   const handleRequestAttestation = async () => {
     setAttestationStatus("loading");
-    const result = await simulateSubmitRequest();
-    setRoundId(result);
-    setAttestationStatus("done");
+    try {
+      const result = await submitRequest();
+      console.log("Attestation result (roundId):", result);
+      setRoundIdValue(result);
+      setAttestationStatus("done");
+    } catch (err) {
+      console.error("Error in submitRequest:", err);
+      setAttestationStatus("idle");
+    }
   };
 
+  // Handler for Step 4: Update Contract State using submitProof
   const handleUpdateContract = async () => {
     setUpdateStatus("loading");
-    const result = await simulateSubmitProof();
-    setTxHash(result);
-    setUpdateStatus("done");
+    try {
+      const result = await submitProof(roundIdValue);
+      console.log("Update Contract result (tx hash):", result);
+      setTxHash(result);
+      setUpdateStatus("done");
+    } catch (err) {
+      console.error("Error in submitProof:", err);
+      setUpdateStatus("idle");
+    }
   };
 
-  // --- Automatically trigger steps sequentially ---
+  // Automatically trigger steps sequentially.
   useEffect(() => {
     if (step1Completed && prepareStatus === "idle") {
       handlePrepareRequest();
@@ -157,12 +157,12 @@ export default function Admin() {
           )}
           {attestationStatus === "done" && (
             <a
-              href={`http://coston2-systems-explorer.flare.rocks/voting-epoch/${roundId}?tab=fdc`}
+              href={`http://coston2-systems-explorer.flare.rocks/voting-epoch/${roundIdValue}?tab=fdc`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#FF69B4] underline"
             >
-              View Attestation (Round {roundId})
+              View Attestation (Round {roundIdValue})
             </a>
           )}
         </div>
