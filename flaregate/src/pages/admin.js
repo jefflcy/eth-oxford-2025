@@ -83,10 +83,16 @@ export default function Admin() {
   }, [prepareStatus, attestationStatus]);
 
   useEffect(() => {
-    if (attestationStatus === "done" && updateStatus === "idle") {
-      handleUpdateContract();
+    if (attestationStatus === "done" && updateStatus === "idle" && roundIdValue) {
+      setUpdateStatus("loading");
+      const delay = 100 * 1000; // 100 seconds
+      const timer = setTimeout(() => {
+        handleUpdateContract();
+      }, delay);
+  
+      return () => clearTimeout(timer); // Cleanup in case component unmounts
     }
-  }, [attestationStatus, updateStatus]);
+  }, [attestationStatus, updateStatus, roundIdValue]);
 
   if (!orderId) {
     return <div>Loading...</div>;

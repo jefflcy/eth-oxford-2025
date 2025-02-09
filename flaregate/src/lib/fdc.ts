@@ -28,7 +28,7 @@ const JQ_API_KEY =
   process.env.NEXT_PUBLIC_JQ_API_KEY || "flare-oxford-2025";
 console.log("JQ_API_KEY:", process.env.NEXT_PUBLIC_JQ_API_KEY);
 // Note: The DA layer URL below should normally be an HTTPS URL. Adjust as needed.
-const DA_LAYER_URL_COSTON2 = "http://0.0.0.0:8080/ctn2-data-availability.flare.network/api/v1/"
+const DA_LAYER_URL_COSTON2 = "https://ctn2-data-availability.flare.network/api/v1/"
 const WEB2_JSON_API_URL =
   "https://pastes.io/download/sample-payments-webhook-response-1"; // MOCK DATA
 
