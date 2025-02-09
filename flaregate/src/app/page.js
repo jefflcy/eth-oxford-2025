@@ -1,22 +1,22 @@
 "use client";
 
-import { supabase } from '../lib/supabaseClient';
-import { AnimatePresence, motion } from "framer-motion";
-import { useState, useEffect } from "react";
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { marketplaceABI, marketplaceAddress } from '@/lib/marketplaceContract';
-import { parseUnits, formatEther } from "ethers";
+import { formatEther, parseUnits } from "ethers";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import { supabase } from '../lib/supabaseClient';
 
 let order_count = 0;
 
 // ----- Navbar Component -----
 function Navbar({ onCreateOrder, onConnectWallet }) {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
 
   return (
     <nav className="w-full flex items-center justify-between px-6 py-4 fixed top-0 z-20 bg-white shadow">
       {/* Logo */}
-      <div className="text-2xl font-bold text-[#FF69B4]">FlareGate</div>
+      <div className="text-2xl font-bold text-[#FF69B4] flaregate-font">FlareGate</div>
       {/* Action Buttons */}
       <div className="flex space-x-4">
         {isConnected && (
@@ -69,7 +69,7 @@ function CreateOrderModal({ onClose }) {
   
     // Validate other required fields
     if (!cflr2 || isNaN(parseFloat(cflr2)) || parseFloat(cflr2) <= 0) {
-      alert("Invalid number of CFLR2.");
+      alert("Invalid number of C2FLR.");
       setLoading(false);
       return;
     }
@@ -153,13 +153,13 @@ function CreateOrderModal({ onClose }) {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Amount of CFLR2</label>
+            <label className="block text-sm font-medium mb-1">Amount of C2FLR</label>
             <input
               type="number"
               value={cflr2}
               onChange={(e) => setCflr2(e.target.value)}
               className="w-full p-2 border border-gray-300 rounded"
-              placeholder="Enter amount of CFLR2"
+              placeholder="Enter amount of C2FLR"
               required
             />
           </div>
@@ -207,8 +207,11 @@ function CreateOrderModal({ onClose }) {
 
 // ----- OrderModal Component for accepting an order -----
 function OrderModal({ order, onClose }) {
-  // Order state: "available" (waiting for action); "accepted" (waiting for payment/attestation); "claimable" (payment is complete), "completed" (tokens claimed), "cancelled" (order cancelled)
   const [status, setStatus] = useState("available");
+  const { address } = useAccount(); // Get the user's address
+  const { writeContractAsync } = useWriteContract();
+  const [nextOrder, setNextOrder] = useState(null);
+
   useEffect(() => {
     switch (order.status) {
       case "0":
@@ -230,7 +233,6 @@ function OrderModal({ order, onClose }) {
         setStatus("available");
     }
   }, [order.status]);
-  const { writeContractAsync } = useWriteContract();
 
   const handleAcceptOrder = async () => {
     setStatus("accepted");
@@ -243,6 +245,22 @@ function OrderModal({ order, onClose }) {
         functionName: "acceptOrder",
         args: [parseInt(order.id)],
       });
+
+      // Fetch orderId + 1 from Supabase
+      const nextOrderId = parseInt(order.id) + 1;
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("id", nextOrderId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching next order:", error);
+        alert("Failed to fetch the next order!");
+      } else {
+        console.log("Next Order:", data);
+        setNextOrder(data);
+      }
 
       // wait for 5 secs
       setTimeout(() => {
@@ -323,15 +341,21 @@ function OrderModal({ order, onClose }) {
           </div>
         )}
         {status === "completed" && (
-            <div className="flex items-center justify-center space-x-2">
-            <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
+          <div className="flex items-center justify-center space-x-2">
             <span>Order is complete.</span>
           </div>
         )}
         {status === "cancelled" && (
-            <div className="flex items-center justify-center space-x-2">
+          <div className="flex items-center justify-center space-x-2">
             <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
             <span>Order is cancelled.</span>
+          </div>
+        )}
+        {nextOrder && address === nextOrder.buyerAddress && (
+          <div className="mt-4">
+            <h3 className="text-lg font-bold">Next Order Details</h3>
+            <p>Order ID: {nextOrder.id}</p>
+            <p>Payment Details: {nextOrder.paymentDetails}</p>
           </div>
         )}
       </motion.div>
@@ -364,14 +388,19 @@ export default function Home() {
   console.log("Orders Data:", ordersData);
   // Transform fetched orders (if any) into the shape expected by the UI.
   const fetchedOrders = ordersData
-    ? ordersData.map((order) => ({
-        id: order.id.toString(),
-        title: `Order #${order.id.toString()}`,
-        price: `${order.price.toString()} ${order.currency}`,
-        quantity: `${formatEther(order.amount)} CFLR2`,
-        status: order.status.toString(), 
-      }))
+    ? ordersData.map((order) => {
+        console.log(`Order ID: ${order.id.toString()}, Price: ${order.price.toString()}`);
+        return {
+          id: order.id.toString(),
+          title: `Order #${order.id.toString()}`,
+          price: `${(parseFloat(order.price) / 100).toFixed(2)} ${order.currency}`,
+          quantity: `${formatEther(order.amount)} C2FLR`,
+          status: order.status.toString(),
+        };
+      })
     : [];
+  
+
 
   return (
     <div className="min-h-screen bg-white text-black relative">

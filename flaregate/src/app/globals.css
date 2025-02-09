@@ -70,3 +70,15 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+@font-face {
+  font-family: 'Toronto Subway Bold';
+  src: url('./toronto-subway-bold.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.flaregate-font {
+  font-family: 'Toronto Subway Bold', sans-serif;
+}
