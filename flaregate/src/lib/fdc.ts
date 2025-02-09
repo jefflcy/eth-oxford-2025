@@ -6,7 +6,7 @@
 require("dotenv").config();
 
 import { ethers } from "ethers";
-import { FDC_HUB_ABI, FDC_HUB_ADDRESS_COSTON2 } from "./marketplaceContract"; // Ensure these are exported correctly
+import { FDC_HUB_ABI, FDC_HUB_ADDRESS_COSTON2, marketplaceAddress, marketplaceABI } from "./marketplaceContract"; 
 
 // A helper function to convert a string to hex.
 export function toHex(data: string): string {
@@ -17,30 +17,27 @@ export function toHex(data: string): string {
   return result.padEnd(64, "0");
 }
 
-// Hardcoded environment values – in production these should come from your .env.local
-const PRIVATE_KEY =
-  process.env.PRIVATE_KEY ||
-  "8c22e5f6a639530efe6cd9afa780c461890fff475d4dc7fee163628d945fc5f3";
-const JQ_VERIFIER_URL_TESTNET =
-  process.env.NEXT_PUBLIC_JQ_VERIFIER_URL_TESTNET ||
-  "https://jq-verifier-test.flare.rocks/";
-const JQ_API_KEY =
-  process.env.NEXT_PUBLIC_JQ_API_KEY || "flare-oxford-2025";
-console.log("JQ_API_KEY:", process.env.NEXT_PUBLIC_JQ_API_KEY);
-// Note: The DA layer URL below should normally be an HTTPS URL. Adjust as needed.
+const PRIVATE_KEY = process.env.PRIVATE_KEY || "8c22e5f6a639530efe6cd9afa780c461890fff475d4dc7fee163628d945fc5f3";
+const JQ_VERIFIER_URL_TESTNET = process.env.NEXT_PUBLIC_JQ_VERIFIER_URL_TESTNET || "https://jq-verifier-test.flare.rocks/";
+const JQ_API_KEY = process.env.NEXT_PUBLIC_JQ_API_KEY || "flare-oxford-2025";
+
+const FLARE_RPC_API_KEY = "00000000-0000-0000-0000-000000000000"
+const FLARE_RPC_URL = "https://rpc.ankr.com/flare_coston2" +(FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : "");
+
 const DA_LAYER_URL_COSTON2 = "https://ctn2-data-availability.flare.network/api/v1/"
-const WEB2_JSON_API_URL =
-  "https://pastes.io/download/sample-payments-webhook-response-1"; // MOCK DATA
+// const WEB2_JSON_API_URL = "https://pastes.io/download/sample-payments-webhook-response-1"; // MOCK DATA
+
+let abiEncodedRequest = ''; // TO REDUCE NUMBER OF PREPARE REQUEST CALLS
 
 /* --------------------------------------------------- prepareRequest --------------------------------------------------- */
-export async function prepareRequest() {
+export async function prepareRequest(web2APIURL: string) {
   const attestationType = "0x" + toHex("IJsonApi");
   const sourceType = "0x" + toHex("WEB2");
   const requestData = {
     attestationType: attestationType,
     sourceId: sourceType,
     requestBody: {
-      url: WEB2_JSON_API_URL,
+      url: web2APIURL,
       postprocessJq: ". | .paidAmt = (.paidAmt * 100 | floor)",
       abi_signature:
         '{"components": [{"internalType": "uint256","name": "onChainOrderId","type": "uint256"},{"internalType": "address","name": "onChainSeller","type": "address"},{"internalType": "uint256","name": "paidAmt","type": "uint256"},{"internalType": "string","name": "paidCurrency","type": "string"},{"internalType": "uint256","name": "paidTimestamp","type": "uint256"},{"internalType": "string","name": "offChainReference","type": "string"}],"name": "payment","type": "tuple"}'
@@ -60,8 +57,12 @@ export async function prepareRequest() {
     },
     body: JSON.stringify(requestData),
   });
-  const data = await response.json();
+  const data: any = await response.json();
   console.log("prepareRequest response:", data);
+
+  // store the abiEncodedRequest for later use
+  abiEncodedRequest = data.abiEncodedRequest;
+
   return data;
 }
 
@@ -70,18 +71,13 @@ const firstVotingRoundStartTs = 1658430000; // coston2
 const votingEpochDurationSeconds = 90; // coston2
 
 export async function submitRequest() {
-  // Get the prepared request data.
-  const requestData: any = await prepareRequest();
-  if (!requestData.abiEncodedRequest) {
-    throw new Error("Invalid response format: missing abiEncodedRequest");
+  // const requestData: any = await prepareRequest();
+
+  if (!abiEncodedRequest) {
+    throw new Error("Missing abiEncodedRequest");
   }
 
-  // Create a JSON-RPC provider using an HTTPS URL.
-  const FLARE_RPC_API_KEY = process.env.NEXT_PUBLIC_FLARE_RPC_API_KEY || "";
-  const rpcUrl =
-    "https://rpc.ankr.com/flare_coston2" +
-    (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : "");
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const provider = new ethers.JsonRpcProvider(FLARE_RPC_URL);
 
   // Instead of using provider.getSigner(), we create a Wallet from our private key.
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
@@ -94,7 +90,7 @@ export async function submitRequest() {
     FDC_HUB_ABI,
     connectedWallet
   );
-  const tx = await contract.requestAttestation(requestData.abiEncodedRequest, {
+  const tx = await contract.requestAttestation(abiEncodedRequest, {
     value: ethers.parseEther("1").toString(),
   });
   console.log("Submitted request, tx.hash:", tx.hash);
@@ -119,9 +115,10 @@ export async function submitRequest() {
 
 /* --------------------------------------------------- getProof --------------------------------------------------- */
 export async function getProof(roundId: number) {
-  // Add a delay if you need to slow down the frequency of calls
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-  const request: any = await prepareRequest();
+  if (!abiEncodedRequest) {
+    throw new Error("Missing abiEncodedRequest");
+  }
+
   const url = `${DA_LAYER_URL_COSTON2}fdc/proof-by-request-round`;
   const response = await fetch(url, {
     method: "POST",
@@ -131,38 +128,45 @@ export async function getProof(roundId: number) {
     },
     body: JSON.stringify({
       votingRoundId: roundId,
-      requestBytes: request.abiEncodedRequest,
+      requestBytes: abiEncodedRequest,
     }),
   });
-  const data = await response.json();
+  const data = await response.json() as {proof: any, response: any};
   console.log("getProof response:", data);
   return data;
 }
 
 /* --------------------------------------------------- submitProof --------------------------------------------------- */
 export async function submitProof(roundId: number) {
-  const proofAndData = await getProof(roundId);
+  let response;
+  let proofAndData;
+  while (!response) {
+    proofAndData = await getProof(roundId);
+    console.log("Proof and data in while loop:", proofAndData);
+    response = proofAndData?.response;
+    console.log("Response in proofAndData in while loop:", response);
+    if (!response) {
+      console.log("Waiting to call getProof again...");
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+    }
+  }
   console.log("Proof and data:", proofAndData);
-  const data = (proofAndData as any).data;
-  console.log("Data:", data);
-  return data;
 
-//   const FLARE_RPC_API_KEY = process.env.NEXT_PUBLIC_FLARE_RPC_API_KEY || "";
-//   const rpcUrl =
-//     "https://rpc.ankr.com/flare_coston2" +
-//     (FLARE_RPC_API_KEY ? `?x-apikey=${FLARE_RPC_API_KEY}` : "");
-//   const provider = new ethers.JsonRpcProvider(rpcUrl);
-//   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-//   const { marketplaceAddress, marketplaceABI } = await import("./marketplaceContract");
-//   const marketplace = new ethers.Contract(marketplaceAddress, marketplaceABI, wallet);
-//   if (typeof proofAndData !== "object" || proofAndData === null) {
-//     throw new Error("Invalid proofAndData");
-//   }
+  const provider = new ethers.JsonRpcProvider(FLARE_RPC_URL);
+  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
+  const marketplace = new ethers.Contract(marketplaceAddress, marketplaceABI, wallet);
 
-//   const tx = await marketplace.recordFiatPayment({
-//     merkleProof: proofAndData.proof,
-//     data: proofAndData.response,
-//   });
-//   console.log("Submitted proof, tx.hash:", tx.hash);
-//   return tx.hash;
+  try {
+    const tx = await marketplace.recordFiatPayment({
+      merkleProof: proofAndData?.proof,
+      data: proofAndData?.response,
+    });
+
+    console.log("Submitted proof, tx.hash:", tx.hash);
+    return tx.hash;
+
+  } catch (error) {
+    console.error("Failed to submit proof:", error);
+    throw error;
+  }
 }

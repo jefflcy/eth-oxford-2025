@@ -249,7 +249,7 @@ function OrderModal({ order, onClose }) {
       });
 
       // wait for 5 secs
-      setInterval(() => {
+      setTimeout(() => {
         alert("Order accepted! Waiting for payment and attestation...");
       }, 5000);
 
@@ -272,7 +272,7 @@ function OrderModal({ order, onClose }) {
       });
 
       // wait for 5 secs
-      setInterval(() => {
+      setTimeout(() => {
         alert("Tokens claimed successfully!");
       }, 5000);
 

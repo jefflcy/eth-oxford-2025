@@ -1,4 +1,4 @@
-export const marketplaceAddress = "0x386d37629a915F0Bf74918b835E682d52Ea57E81"; // Replace with your deployed contract address
+export const marketplaceAddress = "0xEca1D7Da19d03b059c255484171743ee3b7Db4D2"; // Replace with your deployed contract address
 export const marketplaceABI = [
   {
     "inputs": [

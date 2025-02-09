@@ -32,7 +32,7 @@ export default function Admin() {
   const handlePrepareRequest = async () => {
     setPrepareStatus("loading");
     try {
-      const result = await prepareRequest();
+      const result = await prepareRequest(externalUrl);
       console.log("Prepare Request result:", result);
       setPrepareStatus("done");
     } catch (err) {
@@ -58,15 +58,22 @@ export default function Admin() {
   // Handler for Step 4: Update Contract State using submitProof
   const handleUpdateContract = async () => {
     setUpdateStatus("loading");
-    try {
-      const result = await submitProof(roundIdValue);
-      console.log("Update Contract result (tx hash):", result);
-      setTxHash(result);
-      setUpdateStatus("done");
-    } catch (err) {
-      console.error("Error in submitProof:", err);
-      setUpdateStatus("idle");
-    }
+
+    const delay = 100 * 1000; // 100 seconds
+    console.log(`Delaying submitProof for ${delay / 1000} seconds...`);
+  
+    setTimeout(async () => {
+      try {
+        console.log("Submitting proof with roundId:", roundIdValue);
+        const result = await submitProof(roundIdValue);
+        console.log("Update Contract result (tx hash):", result);
+        setTxHash(result);
+        setUpdateStatus("done");
+      } catch (err) {
+        console.error("Error in submitProof:", err);
+        setUpdateStatus("idle");
+      }
+    }, delay);
   };
 
   // Automatically trigger steps sequentially.
@@ -83,16 +90,10 @@ export default function Admin() {
   }, [prepareStatus, attestationStatus]);
 
   useEffect(() => {
-    if (attestationStatus === "done" && updateStatus === "idle" && roundIdValue) {
-      setUpdateStatus("loading");
-      const delay = 100 * 1000; // 100 seconds
-      const timer = setTimeout(() => {
-        handleUpdateContract();
-      }, delay);
-  
-      return () => clearTimeout(timer); // Cleanup in case component unmounts
+    if (attestationStatus === "done" && updateStatus === "idle") {
+      handleUpdateContract();  
     }
-  }, [attestationStatus, updateStatus, roundIdValue]);
+  }, [attestationStatus, updateStatus]);
 
   if (!orderId) {
     return <div>Loading...</div>;
@@ -142,7 +143,7 @@ export default function Admin() {
           </div>
           {prepareStatus === "loading" && <span>Preparing request...</span>}
           {prepareStatus === "done" && (
-            <span className="text-green-500">Request prepared.</span>
+            <span className="text-green-500">Request: VALID.</span>
           )}
         </div>
 
