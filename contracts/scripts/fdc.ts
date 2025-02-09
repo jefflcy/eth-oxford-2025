@@ -1,5 +1,4 @@
-import { artifacts, ethers, run } from "hardhat";
-import { MarketplaceInstance } from "../typechain-types";
+import { artifacts, ethers } from "hardhat";
 
 const Marketplace = artifacts.require("Marketplace");
 const FDCHub = artifacts.require("@flarenetwork/flare-periphery-contracts/coston/IFdcHub.sol:IFdcHub");
@@ -22,7 +21,7 @@ const FDC_HUB_ADDRESS_COSTON2 = "0x48aC463d7975828989331F4De43341627b9c5f1D"; //
 
 /* --------------------------------------------------- prepareRequest --------------------------------------------------- */
 
-async function prepareRequest() {
+export async function prepareRequest() {
     const attestationType = "0x" + toHex("IJsonApi");
     const sourceType = "0x" + toHex("WEB2");
     const requestData = {
