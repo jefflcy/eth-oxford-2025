@@ -211,12 +211,33 @@ function CreateOrderModal({ onClose }) {
 
 // ----- OrderModal Component for accepting an order -----
 function OrderModal({ order, onClose }) {
-  // Order state: "idle" (waiting for action); "pending" (waiting for payment/attestation); "accepted" (payment complete)
-  const [status, setStatus] = useState("idle");
+  // Order state: "available" (waiting for action); "accepted" (waiting for payment/attestation); "claimable" (payment is complete), "completed" (tokens claimed), "cancelled" (order cancelled)
+  const [status, setStatus] = useState("available");
+  useEffect(() => {
+    switch (order.status) {
+      case "0":
+        setStatus("available");
+        break;
+      case "1":
+        setStatus("accepted");
+        break;
+      case "2":
+        setStatus("claimable");
+        break;
+      case "3":
+        setStatus("completed");
+        break;
+      case "4":
+        setStatus("cancelled");
+        break;
+      default:
+        setStatus("available");
+    }
+  }, [order.status]);
   const { writeContractAsync } = useWriteContract();
 
   const handleAcceptOrder = async () => {
-    setStatus("pending");
+    setStatus("accepted");
 
     try {
       // sign tx for accepting order
@@ -226,22 +247,40 @@ function OrderModal({ order, onClose }) {
         functionName: "acceptOrder",
         args: [parseInt(order.id)],
       });
-  
-      const receipt = await tx.wait();
 
-      // once tx is confirmed, set status to accepted
-      if (receipt.status === 1) {
-        setStatus("accepted");
-      }
+      // wait for 5 secs
+      setInterval(() => {
+        alert("Order accepted! Waiting for payment and attestation...");
+      }, 5000);
+
     } catch (error) {
       console.error("Error accepting order:", error);
       alert("Failed to accept order!");
-      setStatus("idle");
+      setStatus("available");
     }
   };
 
-  const handleClaimTokens = () => {
-    // Simulate claiming tokens, then close the modal
+  const handleClaimTokens = async function () {
+    setStatus("completed");
+
+    try {
+      const tx = await writeContractAsync({
+        address: marketplaceAddress,
+        abi: marketplaceABI,
+        functionName: "claimTokens",
+        args: [parseInt(order.id)],
+      });
+
+      // wait for 5 secs
+      setInterval(() => {
+        alert("Tokens claimed successfully!");
+      }, 5000);
+
+    } catch (error) {
+      console.error("Error claiming tokens:", error);
+      alert("Failed to claim tokens!");
+      setStatus("claimable");
+    }
     onClose();
   };
 
@@ -262,7 +301,7 @@ function OrderModal({ order, onClose }) {
         <h2 className="text-xl font-bold mb-4">{order.title}</h2>
         <p className="mb-2">You pay {order.price}</p>
         <p className="mb-4">You get {order.quantity}</p>
-        {status === "idle" && (
+        {status === "available" && (
           <button
             onClick={handleAcceptOrder}
             className="bg-[#FF69B4] hover:bg-[#FF5BA0] text-white rounded-full px-4 py-2 transition w-full"
@@ -270,13 +309,13 @@ function OrderModal({ order, onClose }) {
             Accept Order
           </button>
         )}
-        {status === "pending" && (
+        {status === "accepted" && (
           <div className="flex items-center justify-center space-x-2">
             <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
             <span>Waiting for payment and attestation...</span>
           </div>
         )}
-        {status === "accepted" && (
+        {status === "claimable" && (
           <div className="flex flex-col items-center space-y-4">
             <div className="text-[#FF69B4] text-4xl">✓</div>
             <button
@@ -285,6 +324,18 @@ function OrderModal({ order, onClose }) {
             >
               Claim Tokens
             </button>
+          </div>
+        )}
+        {status === "completed" && (
+            <div className="flex items-center justify-center space-x-2">
+            <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
+            <span>Order is complete.</span>
+          </div>
+        )}
+        {status === "cancelled" && (
+            <div className="flex items-center justify-center space-x-2">
+            <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
+            <span>Order is cancelled.</span>
           </div>
         )}
       </motion.div>
@@ -322,6 +373,7 @@ export default function Home() {
         title: `Order #${order.id.toString()}`,
         price: `${order.price.toString()} ${order.currency}`,
         quantity: `${formatEther(order.amount)} CFLR2`,
+        status: order.status.toString(), 
       }))
     : [];
 
