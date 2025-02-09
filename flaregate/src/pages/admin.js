@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { prepareRequest, submitRequest, submitProof } from "@/lib/fdc";
-import NavBar from "../components/ui/NavBar";
+import NavBar from "@/components/ui/Navbar";
 
 // A simple fetcher function for SWR (for Step 1)
 const fetcher = (url) => fetch(url).then((res) => res.json());

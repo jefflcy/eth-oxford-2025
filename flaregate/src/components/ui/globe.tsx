@@ -50,6 +50,7 @@ export function Globe({
   const updatePointerInteraction = (value: any) => {
     pointerInteracting.current = value
     if (canvasRef.current) {
+      // @ts-ignore
       canvasRef.current.style.cursor = value ? "grabbing" : "grab"
     }
   }
@@ -74,11 +75,13 @@ export function Globe({
 
   const onResize = () => {
     if (canvasRef.current) {
+      // @ts-ignore
       width = canvasRef.current.offsetWidth
     }
   }
 
   useEffect(() => {
+    // @ts-ignore
     window.addEventListener("resize", onResize)
     onResize()
 
@@ -89,6 +92,7 @@ export function Globe({
       onRender,
     })
 
+    // @ts-ignore
     setTimeout(() => (canvasRef.current!.style.opacity = "1"))
     return () => globe.destroy()
   }, [])
