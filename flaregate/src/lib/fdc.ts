@@ -138,14 +138,14 @@ export async function getProof(roundId: number) {
 
 /* --------------------------------------------------- submitProof --------------------------------------------------- */
 export async function submitProof(roundId: number) {
-  let response;
+  let response: object | undefined;
   let proofAndData;
-  while (!response) {
+  while (!response || Object.keys(response).length === 0) {
     proofAndData = await getProof(roundId);
     console.log("Proof and data in while loop:", proofAndData);
     response = proofAndData?.response;
     console.log("Response in proofAndData in while loop:", response);
-    if (!response) {
+    if (!response || Object.keys(response).length === 0) {
       console.log("Waiting to call getProof again...");
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
