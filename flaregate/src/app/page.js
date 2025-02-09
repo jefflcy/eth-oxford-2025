@@ -324,9 +324,14 @@ function OrderModal({ order, onClose }) {
           </button>
         )}
         {status === "accepted" && (
-          <div className="flex items-center justify-center space-x-2">
-            <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
-            <span>Waiting for payment and attestation...</span>
+          <div>
+            <div className="mb-2 text-center text-sm text-gray-600">
+                Payment Details: Paid via Revolut (test@gmail.com)
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <div className="w-6 h-6 border-4 border-[#FF69B4] border-t-transparent rounded-full animate-spin"></div>
+              <span>Waiting for payment and attestation...</span>
+            </div>
           </div>
         )}
         {status === "claimable" && (
