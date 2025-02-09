@@ -87,34 +87,30 @@ function CreateOrderModal({ onClose }) {
         functionName: "createOrder",
         args: [sanitizedPrice, sanitizedCurrency],
       });
-      await tx.wait();
-      console.log("Order created on blockchain:", tx);
+
+      // wait for 5 secs
+      setTimeout(() => {
+        alert("Order accepted! Waiting for payment and attestation...");
+      }, 5000);
+
+      // write payment details to supabase
+      console.log(`Order count which is row_id: ${order_count}`);
+      const { error } = await supabase.from("orders").upsert([{ paymentDetails, row_id: order_count }]);
+    
+      if (error) {
+        console.error("Error inserting order:", error.message);
+      } else {
+        console.log("Payment details stored in DB successfully!");
+      }
     } catch (error) {
       console.error("Error creating order on blockchain:", error);
       alert("Failed to create order on blockchain!");
       setLoading(false);
       return;
     }
-    
-    // NOT TESTED YET
-    // Insert only PK (UUID) and paymentDetails into Supabase
-
-
-    console.log("Order Count:", order_count);
-
-    const row_id = order_count; 
-    const { data, error } = await supabase.from("orders").insert([{ paymentDetails, row_id }]);
-  
-    if (error) {
-      console.error("Error inserting order:", error.message);
-      alert("Failed to create order!");
-    } else {
-      console.log("Order created:", data);
-      alert("Order created successfully!");
-      onClose();
-    }
   
     setLoading(false);
+    onClose();
   };
 
 
