@@ -2,10 +2,12 @@
 
 import { supabase } from '../lib/supabaseClient';
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 import { marketplaceABI, marketplaceAddress } from '@/lib/marketplaceContract';
 import { parseUnits, formatEther } from "ethers";
+
+let order_count = 0;
 
 // ----- Navbar Component -----
 function Navbar({ onCreateOrder, onConnectWallet }) {
@@ -96,18 +98,23 @@ function CreateOrderModal({ onClose }) {
     
     // NOT TESTED YET
     // Insert only PK (UUID) and paymentDetails into Supabase
-    // const { data, error } = await supabase.from("orders").insert([{ paymentDetails }]);
+
+
+    console.log("Order Count:", order_count);
+
+    const row_id = order_count; 
+    const { data, error } = await supabase.from("orders").insert([{ paymentDetails, row_id }]);
   
-    // if (error) {
-    //   console.error("Error inserting order:", error.message);
-    //   alert("Failed to create order!");
-    // } else {
-    //   console.log("Order created:", data);
-    //   alert("Order created successfully!");
-    //   onClose();
-    // }
+    if (error) {
+      console.error("Error inserting order:", error.message);
+      alert("Failed to create order!");
+    } else {
+      console.log("Order created:", data);
+      alert("Order created successfully!");
+      onClose();
+    }
   
-    // setLoading(false);
+    setLoading(false);
   };
 
 
@@ -296,6 +303,16 @@ export default function Home() {
     abi: marketplaceABI,
     functionName: "getAllOrders",
   });
+
+  const [orderCount, setOrderCount] = useState(0);
+
+  useEffect(() => {
+    if (ordersData) {
+      setOrderCount(ordersData.length);
+    }
+  }, [ordersData]);
+
+  order_count = orderCount;
   
   console.log("Orders Data:", ordersData);
   // Transform fetched orders (if any) into the shape expected by the UI.
