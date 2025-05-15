@@ -17,7 +17,7 @@ const GLOBE_CONFIG: COBEOptions = {
   mapSamples: 16000,
   mapBrightness: 1.2,
   baseColor: [1, 1, 1],
-  markerColor: [251 / 255, 100 / 255, 21 / 255],
+  markerColor: [1, 0.4118, 0.7059],
   glowColor: [1, 1, 1],
   markers: [
     { location: [14.5995, 120.9842], size: 0.03 },
@@ -50,6 +50,7 @@ export function Globe({
   const updatePointerInteraction = (value: any) => {
     pointerInteracting.current = value
     if (canvasRef.current) {
+      // @ts-ignore
       canvasRef.current.style.cursor = value ? "grabbing" : "grab"
     }
   }
@@ -74,11 +75,13 @@ export function Globe({
 
   const onResize = () => {
     if (canvasRef.current) {
+      // @ts-ignore
       width = canvasRef.current.offsetWidth
     }
   }
 
   useEffect(() => {
+    // @ts-ignore
     window.addEventListener("resize", onResize)
     onResize()
 
@@ -89,6 +92,7 @@ export function Globe({
       onRender,
     })
 
+    // @ts-ignore
     setTimeout(() => (canvasRef.current!.style.opacity = "1"))
     return () => globe.destroy()
   }, [])
